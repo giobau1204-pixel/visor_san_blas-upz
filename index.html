@@ -14,7 +14,7 @@
             background: white; padding: 15px; border-radius: 8px;
             box-shadow: 0 0 15px rgba(0,0,0,0.2); max-width: 300px;
         }
-        .info-panel h2 { font-size: 16px; margin-top: 0; color: #1e3a8a; }
+        .info-panel h2 { font-size: 16px; margin-top: 0; color: #990000; }
         .legend i { width: 18px; height: 18px; float: left; margin-right: 8px; opacity: 0.8; }
     </style>
 </head>
@@ -24,11 +24,12 @@
 
     <div class="info-panel">
         <h2>UPZ 32 San Blas</h2>
-        <p><b>Análisis Multicriterio (IPT)</b></p>
+        <p><b>Análisis Multicriterio (IPT - Rojos)</b></p>
         <div class="legend">
-            <i style="background: #023858;"></i> Alta Prioridad (IPT Alto)<br>
-            <i style="background: #74a9cf;"></i> Prioridad Media<br>
-            <i style="background: #ece7f2;"></i> Baja Prioridad<br>
+            <i style="background: #67000d;"></i> Alta Prioridad (IPT Alto)<br>
+            <i style="background: #cb181d;"></i> Prioridad Media-Alta<br>
+            <i style="background: #fb6a4a;"></i> Prioridad Baja<br>
+            <i style="background: #fcbba1;"></i> Prioridad Mínima<br>
             <i style="background: #d9d9d9;"></i> No Aplica (Estrato 0)<br>
         </div>
         <p style="font-size: 11px; color: #666; margin-top: 10px;">Haga clic sobre una manzana para consultar sus métricas.</p>
@@ -39,21 +40,21 @@
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 
     <script>
-        // Inicializar el mapa centrado en la UPZ San Blas (Bogotá)
+        // Inicializar el mapa centrado en San Blas
         var map = L.map('map').setView([4.575, -74.075], 14);
 
-        // Mapa Base público de Esri (Libre de restricciones y sin API Key)
-        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
-            attribution: 'Tiles &copy; Esri &mdash; Source: Esri, DeLorme, NAVTEQ, USGS, Intermap, iPC, NRCAN, Esri Japan, METI, Esri China (Hong Kong), Esri (Taiwan), and the GIS User Community',
+        // Mapa Base de Esri
+        var baseLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+            attribution: 'Tiles &copy; Esri',
             maxZoom: 19
         }).addTo(map);
 
-        // Función de color según el IPT (simulando QGIS)
+        // Escala de Rojos para el IPT
         function getColor(ipt) {
-            return ipt > 0.35 ? '#023858' :
-                   ipt > 0.31 ? '#3690c0' :
-                   ipt > 0.28 ? '#67a9cf' :
-                   ipt > 0.00 ? '#ece7f2' : '#d9d9d9'; // Gris para Estrato 0 / No Aplica
+            return ipt > 0.35 ? '#67000d' :
+                   ipt > 0.31 ? '#cb181d' :
+                   ipt > 0.28 ? '#fb6a4a' :
+                   ipt > 0.00 ? '#fcbba1' : '#d9d9d9';
         }
 
         function style(feature) {
@@ -62,33 +63,77 @@
                 weight: 1,
                 opacity: 1,
                 color: 'white',
-                fillOpacity: 0.75
+                fillOpacity: 0.8
             };
         }
 
-        // Cargar el GeoJSON exportado desde QGIS
+        var manzanasLayer = L.layerGroup();
+        var tiendasLayer = L.layerGroup();
+        var paraderosLayer = L.layerGroup();
+
+        // 1. Cargar Manzanas
         $.getJSON("datos_san_blas.geojson", function (data) {
-            var geojsonLayer = L.geoJson(data, {
+            var geojson = L.geoJson(data, {
                 style: style,
                 onEachFeature: function (feature, layer) {
                     var p = feature.properties;
-                    var popupContent = `
+                    layer.bindPopup(`
                         <b>Manzana Catastral</b><br>
                         <b>Código:</b> ${p.CODIGO_MANZANA || 'N/A'}<br>
                         <b>Estrato:</b> ${p.ESTRATO !== undefined ? p.ESTRATO : 'N/A'}<br>
                         <hr style="margin:5px 0;">
                         <b>Dist. Tiendas:</b> ${p.dist_tiendas ? p.dist_tiendas + ' m' : 'N/A'}<br>
                         <b>Dist. Paraderos:</b> ${p.dist_paraderos ? p.dist_paraderos + ' m' : 'N/A'}<br>
-                        <b>ICA (Acceso Físico):</b> ${p.ica !== null ? p.ica : 'N/A'}<br>
-                        <b>IPT (Prioridad):</b> ${p.ipt !== null ? p.ipt : 'No Aplica'}<br>
-                    `;
-                    layer.bindPopup(popupContent);
+                        <b>ICA:</b> ${p.ica !== null ? p.ica : 'N/A'}<br>
+                        <b>IPT:</b> ${p.ipt !== null ? p.ipt : 'No Aplica'}<br>
+                    `);
                 }
-            }).addTo(map);
-
-            // Ajustar el zoom del mapa automáticamente a los límites de San Blas
-            map.fitBounds(geojsonLayer.getBounds());
+            });
+            manzanasLayer.addLayer(geojson);
+            manzanasLayer.addTo(map);
+            map.fitBounds(geojson.getBounds());
         });
+
+        // 2. Cargar Tiendas (Apuntando a tu archivo real: tiendas_sanblas.geojson)
+        $.getJSON("tiendas_sanblas.geojson", function (data) {
+            var tiendasGeo = L.geoJson(data, {
+                pointToLayer: function (feature, latlng) {
+                    return L.circleMarker(latlng, {
+                        radius: 5, fillColor: "#22c55e", color: "#fff", weight: 1, fillOpacity: 0.9
+                    });
+                },
+                onEachFeature: function (feature, layer) {
+                    var name = feature.properties.name || feature.properties.NOMBRE || 'Tienda / Comercio';
+                    layer.bindPopup(`<b>Comercio de Alimentos</b><br>Nombre: ${name}`);
+                }
+            });
+            tiendasLayer.addLayer(tiendasGeo);
+            tiendasLayer.addTo(map); // Aparece activa por defecto
+        });
+
+        // 3. Cargar Paraderos SITP
+        $.getJSON("paraderos.geojson", function (data) {
+            var paraderosGeo = L.geoJson(data, {
+                pointToLayer: function (feature, latlng) {
+                    return L.circleMarker(latlng, {
+                        radius: 4, fillColor: "#3b82f6", color: "#fff", weight: 1, fillOpacity: 0.9
+                    });
+                },
+                onEachFeature: function (feature, layer) {
+                    layer.bindPopup(`<b>Paradero SITP</b><br>Nodo de transporte público`);
+                }
+            });
+            paraderosLayer.addLayer(paraderosGeo);
+            paraderosLayer.addTo(map); // Aparece activa por defecto
+        });
+
+        // Panel de control de capas en la esquina superior izquierda
+        var overlayMaps = {
+            "Manzanas (IPT - Rojos)": manzanasLayer,
+            "Tiendas de Alimentos": tiendasLayer,
+            "Paraderos SITP": paraderosLayer
+        };
+        L.control.layers(null, overlayMaps, { collapsed: false }).addTo(map);
     </script>
 </body>
 </html>
