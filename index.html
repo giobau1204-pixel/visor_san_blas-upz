@@ -12,10 +12,15 @@
         .info-panel {
             position: absolute; top: 10px; right: 10px; z-index: 1000;
             background: white; padding: 15px; border-radius: 8px;
-            box-shadow: 0 0 15px rgba(0,0,0,0.2); max-width: 300px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.2); max-width: 320px;
         }
         .info-panel h2 { font-size: 16px; margin-top: 0; color: #990000; }
-        .legend i { width: 18px; height: 18px; float: left; margin-right: 8px; opacity: 0.8; }
+        .legend i { width: 18px; height: 18px; float: left; margin-right: 8px; opacity: 0.9; }
+        .legend-point {
+            width: 12px; height: 12px; display: inline-block; border-radius: 50%;
+            margin-right: 8px; vertical-align: middle; border: 1px solid #fff;
+        }
+        .section-title { font-size: 12px; font-weight: bold; margin-top: 10px; color: #333; border-top: 1px solid #ddd; padding-top: 5px; }
     </style>
 </head>
 <body>
@@ -24,15 +29,26 @@
 
     <div class="info-panel">
         <h2>UPZ 32 San Blas</h2>
-        <p><b>Análisis Multicriterio (IPT - Rojos)</b></p>
-        <div class="legend">
+        <p style="margin: 5px 0;"><b>Análisis Multicriterio (IPT)</b></p>
+        
+        <div class="section-title">Manzanas Catastrales (IPT)</div>
+        <div class="legend" style="font-size: 12px; line-height: 20px;">
             <i style="background: #67000d;"></i> Alta Prioridad (IPT Alto)<br>
             <i style="background: #cb181d;"></i> Prioridad Media-Alta<br>
             <i style="background: #fb6a4a;"></i> Prioridad Baja<br>
             <i style="background: #fcbba1;"></i> Prioridad Mínima<br>
             <i style="background: #d9d9d9;"></i> No Aplica (Estrato 0)<br>
         </div>
-        <p style="font-size: 11px; color: #666; margin-top: 10px;">Haga clic sobre una manzana para consultar sus métricas.</p>
+
+        <div class="section-title">Infraestructura y Servicios</div>
+        <div style="font-size: 12px; line-height: 22px;">
+            <span class="legend-point" style="background: #22c55e;"></span> Tiendas de Alimentos<br>
+            <span class="legend-point" style="background: #3b82f6;"></span> Paraderos SITP
+        </div>
+
+        <p style="font-size: 11px; color: #666; margin-top: 10px; border-top: 1px solid #ddd; padding-top: 5px;">
+            Haga clic sobre cualquier elemento para consultar sus métricas.
+        </p>
     </div>
 
     <!-- Leaflet JS -->
@@ -94,7 +110,7 @@
             map.fitBounds(geojson.getBounds());
         });
 
-        // 2. Cargar Tiendas (Apuntando a tu archivo real: tiendas_sanblas.geojson)
+        // 2. Cargar Tiendas (Con pop-up interactivo)
         $.getJSON("tiendas_sanblas.geojson", function (data) {
             var tiendasGeo = L.geoJson(data, {
                 pointToLayer: function (feature, latlng) {
@@ -103,15 +119,19 @@
                     });
                 },
                 onEachFeature: function (feature, layer) {
-                    var name = feature.properties.name || feature.properties.NOMBRE || 'Tienda / Comercio';
-                    layer.bindPopup(`<b>Comercio de Alimentos</b><br>Nombre: ${name}`);
+                    var p = feature.properties;
+                    var name = p.name || p.NOMBRE || p.fna || 'Comercio de Alimentos';
+                    layer.bindPopup(`
+                        <b>Comercio de Alimentos</b><br>
+                        <b>Nombre / ID:</b> ${name}
+                    `);
                 }
             });
             tiendasLayer.addLayer(tiendasGeo);
-            tiendasLayer.addTo(map); // Aparece activa por defecto
+            tiendasLayer.addTo(map);
         });
 
-        // 3. Cargar Paraderos SITP
+        // 3. Cargar Paraderos SITP (Con pop-up interactivo)
         $.getJSON("paraderos.geojson", function (data) {
             var paraderosGeo = L.geoJson(data, {
                 pointToLayer: function (feature, latlng) {
@@ -120,14 +140,19 @@
                     });
                 },
                 onEachFeature: function (feature, layer) {
-                    layer.bindPopup(`<b>Paradero SITP</b><br>Nodo de transporte público`);
+                    var p = feature.properties;
+                    var name = p.name || p.NOMBRE || p.denominacion || 'Paradero SITP';
+                    layer.bindPopup(`
+                        <b>Paradero de Transporte SITP</b><br>
+                        <b>Identificador:</b> ${name}
+                    `);
                 }
             });
             paraderosLayer.addLayer(paraderosGeo);
-            paraderosLayer.addTo(map); // Aparece activa por defecto
+            paraderosLayer.addTo(map);
         });
 
-        // Panel de control de capas en la esquina superior izquierda
+        // Panel de control desplegable en la esquina superior izquierda
         var overlayMaps = {
             "Manzanas (IPT - Rojos)": manzanasLayer,
             "Tiendas de Alimentos": tiendasLayer,
