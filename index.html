@@ -2,57 +2,74 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Geovisor Analítico - UPZ 32 San Blas</title>
+    <title>Geovisor Académico - Análisis de Accesibilidad UPZ 32 San Blas</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Google Fonts: Inter / Academic Serif -->
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
-        body, html { margin: 0; padding: 0; height: 100%; font-family: Arial, sans-serif; overflow: hidden; }
+        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Inter', sans-serif; background: #f8fafc; overflow: hidden; }
         #map { width: 100%; height: 100vh; position: absolute; z-index: 1; }
         
-        /* Panel de Control Lateral (Estilo QGIS) */
+        /* Panel de Control Académico Estético */
         .control-panel {
-            position: absolute; top: 10px; left: 10px; z-index: 1000;
-            background: white; padding: 15px; border-radius: 8px;
-            box-shadow: 0 0 15px rgba(0,0,0,0.3); width: 280px; max-height: 90vh; overflow-y: auto;
+            position: absolute; top: 15px; left: 15px; z-index: 1000;
+            background: #ffffff; padding: 20px; border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08); width: 305px; max-height: 90vh; overflow-y: auto;
+            border: 1px solid #e2e8f0;
         }
-        .control-panel h2 { font-size: 15px; margin-top: 0; color: #990000; text-align: center; }
-        .control-section { margin-bottom: 12px; border-bottom: 1px solid #eee; padding-bottom: 8px; }
-        .control-section label { font-size: 12px; font-weight: bold; display: block; margin-bottom: 4px; color: #333; }
-        .control-section select, .control-section button { width: 100%; padding: 6px; font-size: 11px; margin-top: 4px; border-radius: 4px; border: 1px solid #ccc; }
-        .control-section button { background: #990000; color: white; font-weight: bold; cursor: pointer; }
-        .control-section button:hover { background: #67000d; }
+        .control-panel h2 { font-family: 'Merriweather', serif; font-size: 15px; margin-top: 0; color: #1e293b; text-align: center; border-bottom: 2px solid #cbd5e1; padding-bottom: 8px; }
+        .control-section { margin-bottom: 14px; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; }
+        .control-section label { font-size: 11px; font-weight: 600; display: block; margin-bottom: 6px; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; }
+        .control-section select, .control-section button { width: 100%; padding: 8px; font-size: 12px; margin-top: 4px; border-radius: 6px; border: 1px solid #cbd5e1; background: #fff; color: #334155; }
+        .control-section select:focus, .control-section button:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,0.15); }
+        .control-section button { background: #334155; color: white; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+        .control-section button:hover { background: #1e293b; }
+        .checkbox-group { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #334155; }
+        .checkbox-group label { text-transform: none; font-weight: 400; display: flex; align-items: center; gap: 8px; cursor: pointer; }
 
-        /* Leyenda Flotante Derecha */
+        /* Panel de Referencias (Leyenda) Elegante */
         .info-panel {
-            position: absolute; top: 10px; right: 10px; z-index: 1000;
-            background: white; padding: 12px; border-radius: 8px;
-            box-shadow: 0 0 15px rgba(0,0,0,0.2); width: 220px; font-size: 11px;
+            position: absolute; top: 15px; right: 15px; z-index: 1000;
+            background: #ffffff; padding: 15px; border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08); width: 230px; font-size: 11px; color: #334155;
+            border: 1px solid #e2e8f0;
         }
-        .info-panel h3 { font-size: 13px; margin: 0 0 5px 0; color: #990000; }
-        .legend i { width: 14px; height: 14px; float: left; margin-right: 6px; opacity: 0.9; }
-        .legend-point { width: 10px; height: 10px; display: inline-block; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+        .info-panel h3 { font-family: 'Merriweather', serif; font-size: 13px; margin: 0 0 8px 0; color: #1e293b; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px; }
+        .legend i { width: 14px; height: 14px; float: left; margin-right: 8px; border-radius: 3px; }
+        .legend-point { width: 10px; height: 10px; display: inline-block; border-radius: 50%; margin-right: 8px; vertical-align: middle; border: 1px solid #fff; }
     </style>
 </head>
 <body>
 
     <div id="map"></div>
 
-    <!-- Panel Lateral de Control y Filtros (Estilo QGIS) -->
+    <!-- Panel de Control Académico -->
     <div class="control-panel">
-        <h2>Panel de Control QGIS</h2>
+        <h2>Panel de Análisis Territorial</h2>
         
         <div class="control-section">
-            <label>Visibilidad de Capas:</label>
-            <div><input type="checkbox" id="chk-manzanas" checked> Manzanas (IPT)</div>
-            <div><input type="checkbox" id="chk-tiendas" checked> Tiendas de Alimentos</div>
-            <div><input type="checkbox" id="chk-paraderos" checked> Paraderos SITP</div>
+            <label>Visibilidad de Capas Temáticas:</label>
+            <div class="checkbox-group">
+                <label><input type="checkbox" id="chk-manzanas" checked> Manzanas (IPT / Estrato)</label>
+                <label><input type="checkbox" id="chk-tiendas" checked> Tiendas de Abastecimiento</label>
+                <label><input type="checkbox" id="chk-paraderos" checked> Paraderos SITP</label>
+            </div>
         </div>
 
         <div class="control-section">
-            <label>Filtrar Manzanas por Prioridad (IPT):</label>
+            <label>Modo de Visualización de Manzanas:</label>
+            <select id="modo-capa">
+                <option value="ipt">Índice de Prioridad Territorial (IPT)</option>
+                <option value="estrato">Estrato Socioeconómico</option>
+            </select>
+        </div>
+
+        <div class="control-section" id="filtro-ipt-container">
+            <label>Filtrar por Prioridad (IPT):</label>
             <select id="filtro-ipt">
-                <option value="todos">Mostrar Todas</option>
+                <option value="todos">Mostrar Todas las Prioridades</option>
                 <option value="alto">Alta Prioridad (IPT Alto)</option>
                 <option value="medio">Prioridad Media-Alta</option>
                 <option value="baja">Prioridad Baja / Mínima</option>
@@ -63,30 +80,32 @@
             <label>Filtrar por Distancia a Tiendas:</label>
             <select id="filtro-tiendas">
                 <option value="todos">Cualquier Distancia</option>
-                <option value="cerca">Muy Cerca (< 200 m)</option>
-                <option value="lejos">Distancia Mayor (>= 200 m)</option>
+                <option value="cerca">Muy Cerca (&lt; 200 m)</option>
+                <option value="lejos">Distancia Mayor (&ge; 200 m)</option>
             </select>
         </div>
 
         <div class="control-section">
-            <button id="btn-reset">Restablecer Filtros</button>
+            <button id="btn-reset">Restablecer Parámetros</button>
         </div>
     </div>
 
-    <!-- Panel de Referencias (Leyenda) -->
-    <div class="info-panel">
+    <!-- Panel de Convenciones -->
+    <div class="info-panel" id="panel-leyenda">
         <h3>Convenciones</h3>
-        <b>IPT (Manzanas):</b>
-        <div class="legend" style="line-height: 18px; margin-top: 4px;">
-            <i style="background: #67000d;"></i> Alta Prioridad<br>
-            <i style="background: #cb181d;"></i> Media-Alta<br>
-            <i style="background: #fb6a4a;"></i> Baja Prioridad<br>
-            <i style="background: #fcbba1;"></i> Mínima Prioridad<br>
-            <i style="background: #d9d9d9;"></i> No Aplica (Estrato 0)<br>
+        <div id="leyenda-contenido">
+            <b>Índice de Prioridad (IPT):</b>
+            <div class="legend" style="line-height: 20px; margin-top: 6px;">
+                <i style="background: #7f0000;"></i> Alta Prioridad<br>
+                <i style="background: #d73027;"></i> Media-Alta<br>
+                <i style="background: #fc8d59;"></i> Baja Prioridad<br>
+                <i style="background: #fee08b;"></i> Mínima Prioridad<br>
+                <i style="background: #cbd5e1;"></i> No Aplica (Estrato 0)<br>
+            </div>
         </div>
-        <div style="margin-top: 8px; border-top: 1px solid #eee; padding-top: 5px;">
-            <span class="legend-point" style="background: #22c55e;"></span> Tiendas de Alimentos<br>
-            <span class="legend-point" style="background: #3b82f6;"></span> Paraderos SITP
+        <div style="margin-top: 10px; border-top: 1px solid #e2e8f0; padding-top: 8px;">
+            <span class="legend-point" style="background: #16a34a;"></span> Tiendas de Alimentos<br>
+            <span class="legend-point" style="background: #2563eb;"></span> Paraderos SITP
         </div>
     </div>
 
@@ -99,40 +118,58 @@
         var map = L.map('map', { zoomControl: false }).setView([4.575, -74.075], 14);
         L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-        // Mapa Base Limpio en Tonos Grises (CartoDB Positron - Sin Esri)
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-            subdomains: 'abcd',
+        // Mapa Base Libre y Estable (OpenStreetMap estandar - Carga garantizada sin API keys)
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
             maxZoom: 19
         }).addTo(map);
 
-        // Variables globales para datos y capas
-        var geojsonManzanasLayer = null;
-        var tiendasLayer = L.layerGroup().addTo(map);
-        var paraderosLayer = L.layerGroup().addTo(map);
+        // Grupos de capas principales
         var manzanasGroup = L.layerGroup().addTo(map);
+        // IMPORTANTE: Creamos panes separados para garantizar estrictamente que los puntos queden POR ENCIMA de los polígonos
+        map.createPane('panePoligonos');
+        map.getPane('panePoligonos').style.zIndex = 400;
 
-        // Escala de Rojos para IPT
-        function getColor(ipt) {
-            return ipt > 0.35 ? '#67000d' :
-                   ipt > 0.31 ? '#cb181d' :
-                   ipt > 0.28 ? '#fb6a4a' :
-                   ipt > 0.00 ? '#fcbba1' : '#d9d9d9';
+        map.createPane('panePuntos');
+        map.getPane('panePuntos').style.zIndex = 650; // Z-index superior para que nunca sean tapados
+
+        var tiendasLayer = L.layerGroup({ pane: 'panePuntos' }).addTo(map);
+        var paraderosLayer = L.layerGroup({ pane: 'panePuntos' }).addTo(map);
+
+        var rawManzanasData = null;
+        var geojsonManzanasLayer = null;
+
+        // Escalas de color
+        function getColorIPT(ipt) {
+            return ipt > 0.35 ? '#7f0000' :
+                   ipt > 0.31 ? '#d73027' :
+                   ipt > 0.28 ? '#fc8d59' :
+                   ipt > 0.00 ? '#fee08b' : '#cbd5e1';
+        }
+
+        function getColorEstrato(estrato) {
+            // Estratos comunes en la zona (1, 2, 3 o 0)
+            if (estrato == 1) return '#2b83ba';
+            if (estrato == 2) return '#abdda4';
+            if (estrato == 3) return '#fdae61';
+            return '#cbd5e1'; // Estrato 0 / No aplica
         }
 
         function styleFeature(feature) {
+            var modo = document.getElementById('modo-capa').value;
+            var p = feature.properties;
+            var fillColor = (modo === 'estrato') ? getColorEstrato(p.ESTRATO) : getColorIPT(p.ipt);
+
             return {
-                fillColor: getColor(feature.properties.ipt),
+                fillColor: fillColor,
                 weight: 1,
                 opacity: 1,
-                color: 'white',
+                color: '#ffffff',
                 fillOpacity: 0.75
             };
         }
 
-        // Cargar datos GeoJSON globales
-        var rawManzanasData = null;
-
+        // Cargar datos
         $.getJSON("datos_san_blas.geojson", function (data) {
             rawManzanasData = data;
             dibujarManzanas(data);
@@ -141,52 +178,52 @@
 
         $.getJSON("tiendas_sanblas.geojson", function (data) {
             L.geoJson(data, {
+                pane: 'panePuntos', // Forzar capa superior
                 pointToLayer: function (feature, latlng) {
                     return L.circleMarker(latlng, {
-                        radius: 5, fillColor: "#22c55e", color: "#fff", weight: 1, fillOpacity: 1
+                        radius: 5.5, fillColor: "#16a34a", color: "#ffffff", weight: 1.5, fillOpacity: 1
                     });
                 },
                 onEachFeature: function (feature, layer) {
                     var p = feature.properties;
-                    layer.bindPopup(`<b>Comercio de Alimentos</b><br>Nombre: ${p.name || p.NOMBRE || 'N/A'}`);
+                    layer.bindPopup(`<b>Comercio de Abastecimiento</b><br><b>Nombre:</b> ${p.name || p.NOMBRE || 'N/A'}`);
                 }
             }).addTo(tiendasLayer);
         });
 
         $.getJSON("paraderos.geojson", function (data) {
             L.geoJson(data, {
+                pane: 'panePuntos', // Forzar capa superior
                 pointToLayer: function (feature, latlng) {
                     return L.circleMarker(latlng, {
-                        radius: 4, fillColor: "#3b82f6", color: "#fff", weight: 1, fillOpacity: 1
+                        radius: 4.5, fillColor: "#2563eb", color: "#ffffff", weight: 1.5, fillOpacity: 1
                     });
                 },
                 onEachFeature: function (feature, layer) {
                     var p = feature.properties;
-                    layer.bindPopup(`<b>Paradero SITP</b><br>ID: ${p.name || p.NOMBRE || 'N/A'}`);
+                    layer.bindPopup(`<b>Paradero SITP</b><br><b>Identificador:</b> ${p.name || p.NOMBRE || 'N/A'}`);
                 }
             }).addTo(paraderosLayer);
         });
 
-        // Función para renderizar manzanas con filtros aplicados
         function dibujarManzanas(data) {
             manzanasGroup.clearLayers();
             
             var filtroIptVal = document.getElementById('filtro-ipt').value;
             var filtroTiendasVal = document.getElementById('filtro-tiendas').value;
+            var modo = document.getElementById('modo-capa').value;
 
             geojsonManzanasLayer = L.geoJson(data, {
+                pane: 'panePoligonos',
                 filter: function(feature) {
                     var p = feature.properties;
-                    
-                    // Filtro IPT
-                    if (filtroIptVal === 'alto' && !(p.ipt > 0.35)) return false;
-                    if (filtroIptVal === 'medio' && !(p.ipt > 0.31 && p.ipt <= 0.35)) return false;
-                    if (filtroIptVal === 'baja' && !(p.ipt <= 0.31 && p.ipt > 0.00)) return false;
-
-                    // Filtro Distancia Tiendas (ejemplo a 200 metros)
+                    if (modo === 'ipt') {
+                        if (filtroIptVal === 'alto' && !(p.ipt > 0.35)) return false;
+                        if (filtroIptVal === 'medio' && !(p.ipt > 0.31 && p.ipt <= 0.35)) return false;
+                        if (filtroIptVal === 'baja' && !(p.ipt <= 0.31 && p.ipt > 0.00)) return false;
+                    }
                     if (filtroTiendasVal === 'cerca' && !(p.dist_tiendas && p.dist_tiendas < 200)) return false;
                     if (filtroTiendasVal === 'lejos' && !(p.dist_tiendas && p.dist_tiendas >= 200)) return false;
-
                     return true;
                 },
                 style: styleFeature,
@@ -196,7 +233,7 @@
                         <b>Manzana Catastral</b><br>
                         <b>Código:</b> ${p.CODIGO_MANZANA || 'N/A'}<br>
                         <b>Estrato:</b> ${p.ESTRATO !== undefined ? p.ESTRATO : 'N/A'}<br>
-                        <hr style="margin:4px 0;">
+                        <hr style="margin:4px 0; border:0; border-top:1px solid #ccc;">
                         <b>Dist. Tiendas:</b> ${p.dist_tiendas ? p.dist_tiendas + ' m' : 'N/A'}<br>
                         <b>Dist. Paraderos:</b> ${p.dist_paraderos ? p.dist_paraderos + ' m' : 'N/A'}<br>
                         <b>ICA:</b> ${p.ica !== null ? p.ica : 'N/A'}<br>
@@ -208,7 +245,40 @@
             manzanasGroup.addLayer(geojsonManzanasLayer);
         }
 
-        // Eventos de los filtros del Panel Lateral
+        // Actualizar leyenda dinámicamente según el modo seleccionado
+        function actualizarLeyenda() {
+            var modo = document.getElementById('modo-capa').value;
+            var html = "";
+            var iptContainer = document.getElementById('filtro-ipt-container');
+
+            if (modo === 'estrato') {
+                iptContainer.style.display = 'none';
+                html = `<b>Estrato Socioeconómico:</b>
+                        <div class="legend" style="line-height: 20px; margin-top: 6px;">
+                            <i style="background: #2b83ba;"></i> Estrato 1<br>
+                            <i style="background: #abdda4;"></i> Estrato 2<br>
+                            <i style="background: #fdae61;"></i> Estrato 3<br>
+                            <i style="background: #cbd5e1;"></i> Estrato 0 / No Aplica<br>
+                        </div>`;
+            } else {
+                iptContainer.style.display = 'block';
+                html = `<b>Índice de Prioridad (IPT):</b>
+                        <div class="legend" style="line-height: 20px; margin-top: 6px;">
+                            <i style="background: #7f0000;"></i> Alta Prioridad<br>
+                            <i style="background: #d73027;"></i> Media-Alta<br>
+                            <i style="background: #fc8d59;"></i> Baja Prioridad<br>
+                            <i style="background: #fee08b;"></i> Mínima Prioridad<br>
+                            <i style="background: #cbd5e1;"></i> No Aplica (Estrato 0)<br>
+                        </div>`;
+            }
+            document.getElementById('leyenda-contenido').innerHTML = html;
+        }
+
+        // Eventos
+        document.getElementById('modo-capa').addEventListener('change', function() {
+            actualizarLeyenda();
+            if (rawManzanasData) dibujarManzanas(rawManzanasData);
+        });
         document.getElementById('filtro-ipt').addEventListener('change', function() {
             if (rawManzanasData) dibujarManzanas(rawManzanasData);
         });
@@ -217,18 +287,20 @@
         });
 
         document.getElementById('btn-reset').addEventListener('click', function() {
+            document.getElementById('modo-capa').value = 'ipt';
             document.getElementById('filtro-ipt').value = 'todos';
             document.getElementById('filtro-tiendas').value = 'todos';
             document.getElementById('chk-manzanas').checked = true;
             document.getElementById('chk-tiendas').checked = true;
             document.getElementById('chk-paraderos').checked = true;
+            actualizarLeyenda();
             if (!map.hasLayer(manzanasGroup)) map.addLayer(manzanasGroup);
             if (!map.hasLayer(tiendasLayer)) map.addLayer(tiendasLayer);
             if (!map.hasLayer(paraderosLayer)) map.addLayer(paraderosLayer);
             if (rawManzanasData) dibujarManzanas(rawManzanasData);
         });
 
-        // Control de Visibilidad de Capas (Checkboxes)
+        // Visibilidad de capas
         document.getElementById('chk-manzanas').addEventListener('change', function(e) {
             if (e.target.checked) map.addLayer(manzanasGroup);
             else map.removeLayer(manzanasGroup);
