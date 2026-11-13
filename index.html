@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Geovisor Analítico - Sistema de Acceso a Alimentos UPZ 32 San Blas</title>
+    <title>Geovisor Analítico - Localidad San Cristóbal</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -38,7 +38,7 @@
         }
         .control-section button:hover { background: #3f3f46; }
         
-        /* Checkboxes elegantes */
+        /* Checkboxes */
         .checkbox-group { display: flex; flex-direction: column; gap: 8px; font-size: 13px; color: #3f3f46; margin-top: 5px; }
         .checkbox-group label { text-transform: none; font-weight: 400; display: flex; align-items: center; gap: 8px; cursor: pointer; letter-spacing: normal;}
 
@@ -52,8 +52,6 @@
         .info-panel h3 { font-family: 'Merriweather', serif; font-size: 14px; margin: 0 0 10px 0; color: #18181b; border-bottom: 1px solid #d4d4d8; padding-bottom: 6px; }
         .legend i { width: 16px; height: 16px; float: left; margin-right: 10px; border-radius: 2px; border: 1px solid rgba(0,0,0,0.1); }
         .legend-point { width: 12px; height: 12px; display: inline-block; border-radius: 50%; margin-right: 10px; vertical-align: middle; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
-        
-        .nota-inferencia { font-size: 10px; color: #71717a; margin-top: 15px; border-top: 1px dashed #d4d4d8; padding-top: 8px; font-style: italic; }
     </style>
 </head>
 <body>
@@ -62,7 +60,7 @@
 
     <!-- PANEL IZQUIERDO -->
     <div class="control-panel">
-        <h2>Análisis Territorial Multicriterio<br><span style="font-size:12px; color:#52525b; font-family:'Inter',sans-serif; font-weight:400;">UPZ 32 San Blas</span></h2>
+        <h2>Análisis Territorial Multicriterio<br><span style="font-size:12px; color:#52525b; font-family:'Inter',sans-serif; font-weight:400;">Localidad San Cristóbal - UPZ San Blas</span></h2>
         
         <div class="control-section">
             <label>Capas de Análisis:</label>
@@ -126,9 +124,6 @@
             <span class="legend-point" style="background: #10b981;"></span> Oferta Alimentaria (OSM)<br>
             <span class="legend-point" style="background: #3b82f6;"></span> Movilidad: Paraderos SITP
         </div>
-        <div class="nota-inferencia">
-            * El modelo de accesibilidad espacial infiere distancias KNN euclidianas. No demuestra seguridad alimentaria per se. (Resolución Académica).
-        </div>
     </div>
 
     <!-- Leaflet JS -->
@@ -140,17 +135,16 @@
         var map = L.map('map', { zoomControl: false }).setView([4.575, -74.075], 14.5);
         L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-        // Mapa Base Estándar (OpenStreetMap)
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap contributors',
+        // Mapa Base ESRI (Robusto y estable)
+        var baseLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+            attribution: 'Tiles &copy; Esri',
             maxZoom: 19
         }).addTo(map);
 
         // --- SISTEMA DE CAPAS CON Z-INDEX ESTRICTO ---
-        // 1. Panel de polígonos (Abajo)
         map.createPane('panePoligonos');
         map.getPane('panePoligonos').style.zIndex = 400;
-        // 2. Panel de puntos (Siempre arriba)
+
         map.createPane('panePuntos');
         map.getPane('panePuntos').style.zIndex = 650;
 
@@ -160,31 +154,28 @@
 
         var rawManzanasData = null;
 
-        // --- ESCALAS DE COLOR (Diseño DataViz Académico) ---
-        // IPT: Paleta Secuencial Caliente (Rojos)
+        // --- ESCALAS DE COLOR ---
         function getColorIPT(ipt) {
-            return ipt > 0.35 ? '#991b1b' : // Rojo muy oscuro
-                   ipt > 0.31 ? '#dc2626' : // Rojo base
-                   ipt > 0.28 ? '#f87171' : // Rojo claro
-                   ipt > 0.00 ? '#fecaca' : // Rosa pálido
-                   '#e4e4e7';               // Gris (No aplica)
+            return ipt > 0.35 ? '#991b1b' : 
+                   ipt > 0.31 ? '#dc2626' : 
+                   ipt > 0.28 ? '#f87171' : 
+                   ipt > 0.00 ? '#fecaca' : 
+                   '#e4e4e7';               
         }
         
-        // ICA: Paleta Secuencial Fría/Verde (Accesibilidad)
         function getColorICA(ica) {
-            return ica > 0.70 ? '#047857' : // Verde oscuro (Óptimo)
-                   ica > 0.50 ? '#34d399' : // Verde medio
-                   ica > 0.30 ? '#a7f3d0' : // Verde claro
-                   ica > 0.00 ? '#fef08a' : // Amarillo (Deficiente)
-                   '#e4e4e7';               // Gris
+            return ica > 0.70 ? '#047857' : 
+                   ica > 0.50 ? '#34d399' : 
+                   ica > 0.30 ? '#a7f3d0' : 
+                   ica > 0.00 ? '#fef08a' : 
+                   '#e4e4e7';               
         }
 
-        // ESTRATO: Paleta Categórica Neutra
         function getColorEstrato(estrato) {
-            if (estrato == 1) return '#60a5fa'; // Azul
-            if (estrato == 2) return '#818cf8'; // Indigo
-            if (estrato == 3) return '#c084fc'; // Purpura
-            return '#e4e4e7'; // Estrato 0
+            if (estrato == 1) return '#60a5fa'; 
+            if (estrato == 2) return '#818cf8'; 
+            if (estrato == 3) return '#c084fc'; 
+            return '#e4e4e7'; 
         }
 
         function styleFeature(feature) {
@@ -201,7 +192,7 @@
                 weight: 0.8,
                 opacity: 1,
                 color: '#ffffff',
-                fillOpacity: 0.85 // Ligeramente más opaco para destacar sobre el mapa base
+                fillOpacity: 0.85 
             };
         }
 
@@ -212,7 +203,6 @@
             map.fitBounds(L.geoJson(data).getBounds());
         });
 
-        // Puntos: Forzados al 'panePuntos'
         $.getJSON("tiendas_sanblas.geojson", function (data) {
             L.geoJson(data, {
                 pane: 'panePuntos',
@@ -255,19 +245,16 @@
                 filter: function(feature) {
                     var p = feature.properties;
                     
-                    // Filtro Lógico IPT
                     if (modo === 'ipt') {
                         if (filtroIpt === 'alto' && !(p.ipt > 0.35)) return false;
                         if (filtroIpt === 'medio' && !(p.ipt > 0.31 && p.ipt <= 0.35)) return false;
                         if (filtroIpt === 'baja' && !(p.ipt <= 0.31 && p.ipt > 0.00)) return false;
                     }
-                    // Filtro Lógico ICA
                     if (modo === 'ica') {
                         if (filtroIca === 'optimo' && !(p.ica > 0.50)) return false;
                         if (filtroIca === 'deficiente' && !(p.ica <= 0.50 && p.ica > 0.00)) return false;
                     }
                     
-                    // Filtro Distancia Física a Tiendas
                     if (filtroTiendas === 'cerca' && !(p.dist_tiendas && p.dist_tiendas < 150)) return false;
                     if (filtroTiendas === 'media' && !(p.dist_tiendas && p.dist_tiendas >= 150 && p.dist_tiendas < 300)) return false;
                     if (filtroTiendas === 'lejos' && !(p.dist_tiendas && p.dist_tiendas >= 300)) return false;
@@ -302,7 +289,6 @@
             var iptContainer = document.getElementById('filtro-ipt-container');
             var icaContainer = document.getElementById('filtro-ica-container');
 
-            // Ocultar/Mostrar filtros según métrica
             iptContainer.style.display = (modo === 'ipt') ? 'block' : 'none';
             icaContainer.style.display = (modo === 'ica') ? 'block' : 'none';
 
@@ -355,3 +341,20 @@
             document.getElementById('chk-manzanas').checked = true;
             document.getElementById('chk-tiendas').checked = true;
             document.getElementById('chk-paraderos').checked = true;
+            
+            if (!map.hasLayer(manzanasGroup)) map.addLayer(manzanasGroup);
+            if (!map.hasLayer(tiendasLayer)) map.addLayer(tiendasLayer);
+            if (!map.hasLayer(paraderosLayer)) map.addLayer(paraderosLayer);
+            
+            actualizarInterfaz();
+        });
+
+        document.getElementById('chk-manzanas').addEventListener('change', function(e) { e.target.checked ? map.addLayer(manzanasGroup) : map.removeLayer(manzanasGroup); });
+        document.getElementById('chk-tiendas').addEventListener('change', function(e) { e.target.checked ? map.addLayer(tiendasLayer) : map.removeLayer(tiendasLayer); });
+        document.getElementById('chk-paraderos').addEventListener('change', function(e) { e.target.checked ? map.addLayer(paraderosLayer) : map.removeLayer(paraderosLayer); });
+
+        // Init Leyenda
+        actualizarInterfaz();
+    </script>
+</body>
+</html>
