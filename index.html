@@ -2,110 +2,132 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Geovisor Académico - Análisis de Accesibilidad UPZ 32 San Blas</title>
+    <title>Geovisor Analítico - Sistema de Acceso a Alimentos UPZ 32 San Blas</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <!-- Google Fonts: Inter / Academic Serif -->
-    <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- Fuentes Académicas -->
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
-        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Inter', sans-serif; background: #f8fafc; overflow: hidden; }
+        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Inter', sans-serif; background: #f4f4f5; overflow: hidden; }
         #map { width: 100%; height: 100vh; position: absolute; z-index: 1; }
         
-        /* Panel de Control Académico Estético */
+        /* Panel de Control Analítico (Izquierdo) */
         .control-panel {
             position: absolute; top: 15px; left: 15px; z-index: 1000;
-            background: #ffffff; padding: 20px; border-radius: 10px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08); width: 305px; max-height: 90vh; overflow-y: auto;
-            border: 1px solid #e2e8f0;
+            background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(8px);
+            padding: 22px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
+            width: 320px; max-height: 90vh; overflow-y: auto; border: 1px solid #e4e4e7;
         }
-        .control-panel h2 { font-family: 'Merriweather', serif; font-size: 15px; margin-top: 0; color: #1e293b; text-align: center; border-bottom: 2px solid #cbd5e1; padding-bottom: 8px; }
-        .control-section { margin-bottom: 14px; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; }
-        .control-section label { font-size: 11px; font-weight: 600; display: block; margin-bottom: 6px; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; }
-        .control-section select, .control-section button { width: 100%; padding: 8px; font-size: 12px; margin-top: 4px; border-radius: 6px; border: 1px solid #cbd5e1; background: #fff; color: #334155; }
-        .control-section select:focus, .control-section button:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,0.15); }
-        .control-section button { background: #334155; color: white; font-weight: 600; cursor: pointer; transition: background 0.2s; }
-        .control-section button:hover { background: #1e293b; }
-        .checkbox-group { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #334155; }
-        .checkbox-group label { text-transform: none; font-weight: 400; display: flex; align-items: center; gap: 8px; cursor: pointer; }
+        .control-panel h2 { 
+            font-family: 'Merriweather', serif; font-size: 16px; margin: 0 0 15px 0; 
+            color: #18181b; text-align: left; border-bottom: 2px solid #3f3f46; padding-bottom: 10px; line-height: 1.4;
+        }
+        .control-section { margin-bottom: 15px; }
+        .control-section label { 
+            font-size: 11px; font-weight: 600; display: block; margin-bottom: 6px; 
+            color: #52525b; text-transform: uppercase; letter-spacing: 0.5px; 
+        }
+        .control-section select, .control-section button { 
+            width: 100%; padding: 9px; font-size: 12px; border-radius: 4px; 
+            border: 1px solid #d4d4d8; background: #fff; color: #27272a; font-family: 'Inter', sans-serif;
+        }
+        .control-section select:focus { outline: none; border-color: #52525b; }
+        .control-section button { 
+            background: #27272a; color: white; font-weight: 500; cursor: pointer; transition: 0.2s; margin-top: 5px; border: none;
+        }
+        .control-section button:hover { background: #3f3f46; }
+        
+        /* Checkboxes elegantes */
+        .checkbox-group { display: flex; flex-direction: column; gap: 8px; font-size: 13px; color: #3f3f46; margin-top: 5px; }
+        .checkbox-group label { text-transform: none; font-weight: 400; display: flex; align-items: center; gap: 8px; cursor: pointer; letter-spacing: normal;}
 
-        /* Panel de Referencias (Leyenda) Elegante */
+        /* Panel de Convenciones (Derecho) */
         .info-panel {
             position: absolute; top: 15px; right: 15px; z-index: 1000;
-            background: #ffffff; padding: 15px; border-radius: 10px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08); width: 230px; font-size: 11px; color: #334155;
-            border: 1px solid #e2e8f0;
+            background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(8px);
+            padding: 18px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
+            width: 250px; font-size: 12px; color: #3f3f46; border: 1px solid #e4e4e7;
         }
-        .info-panel h3 { font-family: 'Merriweather', serif; font-size: 13px; margin: 0 0 8px 0; color: #1e293b; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px; }
-        .legend i { width: 14px; height: 14px; float: left; margin-right: 8px; border-radius: 3px; }
-        .legend-point { width: 10px; height: 10px; display: inline-block; border-radius: 50%; margin-right: 8px; vertical-align: middle; border: 1px solid #fff; }
+        .info-panel h3 { font-family: 'Merriweather', serif; font-size: 14px; margin: 0 0 10px 0; color: #18181b; border-bottom: 1px solid #d4d4d8; padding-bottom: 6px; }
+        .legend i { width: 16px; height: 16px; float: left; margin-right: 10px; border-radius: 2px; border: 1px solid rgba(0,0,0,0.1); }
+        .legend-point { width: 12px; height: 12px; display: inline-block; border-radius: 50%; margin-right: 10px; vertical-align: middle; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+        
+        .nota-inferencia { font-size: 10px; color: #71717a; margin-top: 15px; border-top: 1px dashed #d4d4d8; padding-top: 8px; font-style: italic; }
     </style>
 </head>
 <body>
 
     <div id="map"></div>
 
-    <!-- Panel de Control Académico -->
+    <!-- PANEL IZQUIERDO -->
     <div class="control-panel">
-        <h2>Panel de Análisis Territorial</h2>
+        <h2>Análisis Territorial Multicriterio<br><span style="font-size:12px; color:#52525b; font-family:'Inter',sans-serif; font-weight:400;">UPZ 32 San Blas</span></h2>
         
         <div class="control-section">
-            <label>Visibilidad de Capas Temáticas:</label>
+            <label>Capas de Análisis:</label>
             <div class="checkbox-group">
-                <label><input type="checkbox" id="chk-manzanas" checked> Manzanas (IPT / Estrato)</label>
-                <label><input type="checkbox" id="chk-tiendas" checked> Tiendas de Abastecimiento</label>
-                <label><input type="checkbox" id="chk-paraderos" checked> Paraderos SITP</label>
+                <label><input type="checkbox" id="chk-manzanas" checked> Geometría Catastral (Manzanas)</label>
+                <label><input type="checkbox" id="chk-tiendas" checked> Nodos de Abastecimiento (Observado)</label>
+                <label><input type="checkbox" id="chk-paraderos" checked> Nodos SITP (Observado)</label>
             </div>
         </div>
 
         <div class="control-section">
-            <label>Modo de Visualización de Manzanas:</label>
+            <label>Métrica de Modelado (Calculada):</label>
             <select id="modo-capa">
                 <option value="ipt">Índice de Prioridad Territorial (IPT)</option>
-                <option value="estrato">Estrato Socioeconómico</option>
+                <option value="ica">Índice de Condiciones de Acceso (ICA)</option>
+                <option value="estrato">Estrato Socioeconómico (Observado)</option>
             </select>
         </div>
 
         <div class="control-section" id="filtro-ipt-container">
-            <label>Filtrar por Prioridad (IPT):</label>
+            <label>Filtro de Prioridad (IPT):</label>
             <select id="filtro-ipt">
-                <option value="todos">Mostrar Todas las Prioridades</option>
-                <option value="alto">Alta Prioridad (IPT Alto)</option>
+                <option value="todos">Visualizar Todo el Espectro</option>
+                <option value="alto">Solo Alta Prioridad de Intervención</option>
                 <option value="medio">Prioridad Media-Alta</option>
-                <option value="baja">Prioridad Baja / Mínima</option>
+                <option value="baja">Zonas Consolidadas (Baja Prioridad)</option>
+            </select>
+        </div>
+        
+        <div class="control-section" id="filtro-ica-container" style="display:none;">
+            <label>Filtro de Accesibilidad (ICA):</label>
+            <select id="filtro-ica">
+                <option value="todos">Visualizar Todo el Espectro</option>
+                <option value="optimo">Accesibilidad Óptima</option>
+                <option value="deficiente">Accesibilidad Deficiente</option>
             </select>
         </div>
 
         <div class="control-section">
-            <label>Filtrar por Distancia a Tiendas:</label>
+            <label>Distancia a Nodos de Abasto:</label>
             <select id="filtro-tiendas">
-                <option value="todos">Cualquier Distancia</option>
-                <option value="cerca">Muy Cerca (&lt; 200 m)</option>
-                <option value="lejos">Distancia Mayor (&ge; 200 m)</option>
+                <option value="todos">Sin Restricción Espacial</option>
+                <option value="cerca">Distancia Corta (&lt; 150 m)</option>
+                <option value="media">Distancia Media (150 m - 300 m)</option>
+                <option value="lejos">Distancia Crítica (&ge; 300 m)</option>
             </select>
         </div>
 
         <div class="control-section">
-            <button id="btn-reset">Restablecer Parámetros</button>
+            <button id="btn-reset">Restablecer Parámetros Base</button>
         </div>
     </div>
 
-    <!-- Panel de Convenciones -->
+    <!-- PANEL DERECHO (LEYENDA) -->
     <div class="info-panel" id="panel-leyenda">
         <h3>Convenciones</h3>
         <div id="leyenda-contenido">
-            <b>Índice de Prioridad (IPT):</b>
-            <div class="legend" style="line-height: 20px; margin-top: 6px;">
-                <i style="background: #7f0000;"></i> Alta Prioridad<br>
-                <i style="background: #d73027;"></i> Media-Alta<br>
-                <i style="background: #fc8d59;"></i> Baja Prioridad<br>
-                <i style="background: #fee08b;"></i> Mínima Prioridad<br>
-                <i style="background: #cbd5e1;"></i> No Aplica (Estrato 0)<br>
-            </div>
+            <!-- Se llena por JavaScript -->
         </div>
-        <div style="margin-top: 10px; border-top: 1px solid #e2e8f0; padding-top: 8px;">
-            <span class="legend-point" style="background: #16a34a;"></span> Tiendas de Alimentos<br>
-            <span class="legend-point" style="background: #2563eb;"></span> Paraderos SITP
+        <div style="margin-top: 15px; border-top: 1px solid #e4e4e7; padding-top: 12px; line-height: 24px;">
+            <span class="legend-point" style="background: #10b981;"></span> Oferta Alimentaria (OSM)<br>
+            <span class="legend-point" style="background: #3b82f6;"></span> Movilidad: Paraderos SITP
+        </div>
+        <div class="nota-inferencia">
+            * El modelo de accesibilidad espacial infiere distancias KNN euclidianas. No demuestra seguridad alimentaria per se. (Resolución Académica).
         </div>
     </div>
 
@@ -114,130 +136,158 @@
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 
     <script>
-        // Inicializar mapa centrado en San Blas
-        var map = L.map('map', { zoomControl: false }).setView([4.575, -74.075], 14);
+        // Inicializar mapa
+        var map = L.map('map', { zoomControl: false }).setView([4.575, -74.075], 14.5);
         L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-        // Mapa Base Libre y Estable (OpenStreetMap estandar - Carga garantizada sin API keys)
+        // Mapa Base Estándar (OpenStreetMap)
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            attribution: '&copy; OpenStreetMap contributors',
             maxZoom: 19
         }).addTo(map);
 
-        // Grupos de capas principales
-        var manzanasGroup = L.layerGroup().addTo(map);
-        // IMPORTANTE: Creamos panes separados para garantizar estrictamente que los puntos queden POR ENCIMA de los polígonos
+        // --- SISTEMA DE CAPAS CON Z-INDEX ESTRICTO ---
+        // 1. Panel de polígonos (Abajo)
         map.createPane('panePoligonos');
         map.getPane('panePoligonos').style.zIndex = 400;
-
+        // 2. Panel de puntos (Siempre arriba)
         map.createPane('panePuntos');
-        map.getPane('panePuntos').style.zIndex = 650; // Z-index superior para que nunca sean tapados
+        map.getPane('panePuntos').style.zIndex = 650;
 
+        var manzanasGroup = L.layerGroup().addTo(map);
         var tiendasLayer = L.layerGroup({ pane: 'panePuntos' }).addTo(map);
         var paraderosLayer = L.layerGroup({ pane: 'panePuntos' }).addTo(map);
 
         var rawManzanasData = null;
-        var geojsonManzanasLayer = null;
 
-        // Escalas de color
+        // --- ESCALAS DE COLOR (Diseño DataViz Académico) ---
+        // IPT: Paleta Secuencial Caliente (Rojos)
         function getColorIPT(ipt) {
-            return ipt > 0.35 ? '#7f0000' :
-                   ipt > 0.31 ? '#d73027' :
-                   ipt > 0.28 ? '#fc8d59' :
-                   ipt > 0.00 ? '#fee08b' : '#cbd5e1';
+            return ipt > 0.35 ? '#991b1b' : // Rojo muy oscuro
+                   ipt > 0.31 ? '#dc2626' : // Rojo base
+                   ipt > 0.28 ? '#f87171' : // Rojo claro
+                   ipt > 0.00 ? '#fecaca' : // Rosa pálido
+                   '#e4e4e7';               // Gris (No aplica)
+        }
+        
+        // ICA: Paleta Secuencial Fría/Verde (Accesibilidad)
+        function getColorICA(ica) {
+            return ica > 0.70 ? '#047857' : // Verde oscuro (Óptimo)
+                   ica > 0.50 ? '#34d399' : // Verde medio
+                   ica > 0.30 ? '#a7f3d0' : // Verde claro
+                   ica > 0.00 ? '#fef08a' : // Amarillo (Deficiente)
+                   '#e4e4e7';               // Gris
         }
 
+        // ESTRATO: Paleta Categórica Neutra
         function getColorEstrato(estrato) {
-            // Estratos comunes en la zona (1, 2, 3 o 0)
-            if (estrato == 1) return '#2b83ba';
-            if (estrato == 2) return '#abdda4';
-            if (estrato == 3) return '#fdae61';
-            return '#cbd5e1'; // Estrato 0 / No aplica
+            if (estrato == 1) return '#60a5fa'; // Azul
+            if (estrato == 2) return '#818cf8'; // Indigo
+            if (estrato == 3) return '#c084fc'; // Purpura
+            return '#e4e4e7'; // Estrato 0
         }
 
         function styleFeature(feature) {
             var modo = document.getElementById('modo-capa').value;
             var p = feature.properties;
-            var fillColor = (modo === 'estrato') ? getColorEstrato(p.ESTRATO) : getColorIPT(p.ipt);
+            var fillColor = '#e4e4e7';
+            
+            if(modo === 'ipt') fillColor = getColorIPT(p.ipt);
+            else if(modo === 'ica') fillColor = getColorICA(p.ica);
+            else if(modo === 'estrato') fillColor = getColorEstrato(p.ESTRATO);
 
             return {
                 fillColor: fillColor,
-                weight: 1,
+                weight: 0.8,
                 opacity: 1,
                 color: '#ffffff',
-                fillOpacity: 0.75
+                fillOpacity: 0.85 // Ligeramente más opaco para destacar sobre el mapa base
             };
         }
 
-        // Cargar datos
+        // --- CARGA DE DATOS ---
         $.getJSON("datos_san_blas.geojson", function (data) {
             rawManzanasData = data;
             dibujarManzanas(data);
             map.fitBounds(L.geoJson(data).getBounds());
         });
 
+        // Puntos: Forzados al 'panePuntos'
         $.getJSON("tiendas_sanblas.geojson", function (data) {
             L.geoJson(data, {
-                pane: 'panePuntos', // Forzar capa superior
+                pane: 'panePuntos',
                 pointToLayer: function (feature, latlng) {
                     return L.circleMarker(latlng, {
-                        radius: 5.5, fillColor: "#16a34a", color: "#ffffff", weight: 1.5, fillOpacity: 1
+                        radius: 5, fillColor: "#10b981", color: "#ffffff", weight: 1.5, fillOpacity: 1
                     });
                 },
                 onEachFeature: function (feature, layer) {
-                    var p = feature.properties;
-                    layer.bindPopup(`<b>Comercio de Abastecimiento</b><br><b>Nombre:</b> ${p.name || p.NOMBRE || 'N/A'}`);
+                    layer.bindPopup(`<div style="font-family:'Inter'; font-size:12px;"><b>Oferta Alimentaria</b><br>ID/Nombre: ${feature.properties.name || feature.properties.NOMBRE || 'N/D'}</div>`);
                 }
             }).addTo(tiendasLayer);
         });
 
         $.getJSON("paraderos.geojson", function (data) {
             L.geoJson(data, {
-                pane: 'panePuntos', // Forzar capa superior
+                pane: 'panePuntos',
                 pointToLayer: function (feature, latlng) {
                     return L.circleMarker(latlng, {
-                        radius: 4.5, fillColor: "#2563eb", color: "#ffffff", weight: 1.5, fillOpacity: 1
+                        radius: 4.5, fillColor: "#3b82f6", color: "#ffffff", weight: 1.5, fillOpacity: 1
                     });
                 },
                 onEachFeature: function (feature, layer) {
-                    var p = feature.properties;
-                    layer.bindPopup(`<b>Paradero SITP</b><br><b>Identificador:</b> ${p.name || p.NOMBRE || 'N/A'}`);
+                    layer.bindPopup(`<div style="font-family:'Inter'; font-size:12px;"><b>Nodo Movilidad (SITP)</b><br>ID: ${feature.properties.name || feature.properties.NOMBRE || 'N/D'}</div>`);
                 }
             }).addTo(paraderosLayer);
         });
 
+        // --- RENDERIZADO ANALÍTICO (FILTROS) ---
         function dibujarManzanas(data) {
             manzanasGroup.clearLayers();
             
-            var filtroIptVal = document.getElementById('filtro-ipt').value;
-            var filtroTiendasVal = document.getElementById('filtro-tiendas').value;
             var modo = document.getElementById('modo-capa').value;
+            var filtroIpt = document.getElementById('filtro-ipt').value;
+            var filtroIca = document.getElementById('filtro-ica').value;
+            var filtroTiendas = document.getElementById('filtro-tiendas').value;
 
-            geojsonManzanasLayer = L.geoJson(data, {
+            var geojsonManzanasLayer = L.geoJson(data, {
                 pane: 'panePoligonos',
                 filter: function(feature) {
                     var p = feature.properties;
+                    
+                    // Filtro Lógico IPT
                     if (modo === 'ipt') {
-                        if (filtroIptVal === 'alto' && !(p.ipt > 0.35)) return false;
-                        if (filtroIptVal === 'medio' && !(p.ipt > 0.31 && p.ipt <= 0.35)) return false;
-                        if (filtroIptVal === 'baja' && !(p.ipt <= 0.31 && p.ipt > 0.00)) return false;
+                        if (filtroIpt === 'alto' && !(p.ipt > 0.35)) return false;
+                        if (filtroIpt === 'medio' && !(p.ipt > 0.31 && p.ipt <= 0.35)) return false;
+                        if (filtroIpt === 'baja' && !(p.ipt <= 0.31 && p.ipt > 0.00)) return false;
                     }
-                    if (filtroTiendasVal === 'cerca' && !(p.dist_tiendas && p.dist_tiendas < 200)) return false;
-                    if (filtroTiendasVal === 'lejos' && !(p.dist_tiendas && p.dist_tiendas >= 200)) return false;
+                    // Filtro Lógico ICA
+                    if (modo === 'ica') {
+                        if (filtroIca === 'optimo' && !(p.ica > 0.50)) return false;
+                        if (filtroIca === 'deficiente' && !(p.ica <= 0.50 && p.ica > 0.00)) return false;
+                    }
+                    
+                    // Filtro Distancia Física a Tiendas
+                    if (filtroTiendas === 'cerca' && !(p.dist_tiendas && p.dist_tiendas < 150)) return false;
+                    if (filtroTiendas === 'media' && !(p.dist_tiendas && p.dist_tiendas >= 150 && p.dist_tiendas < 300)) return false;
+                    if (filtroTiendas === 'lejos' && !(p.dist_tiendas && p.dist_tiendas >= 300)) return false;
+                    
                     return true;
                 },
                 style: styleFeature,
                 onEachFeature: function (feature, layer) {
                     var p = feature.properties;
                     layer.bindPopup(`
-                        <b>Manzana Catastral</b><br>
-                        <b>Código:</b> ${p.CODIGO_MANZANA || 'N/A'}<br>
-                        <b>Estrato:</b> ${p.ESTRATO !== undefined ? p.ESTRATO : 'N/A'}<br>
-                        <hr style="margin:4px 0; border:0; border-top:1px solid #ccc;">
-                        <b>Dist. Tiendas:</b> ${p.dist_tiendas ? p.dist_tiendas + ' m' : 'N/A'}<br>
-                        <b>Dist. Paraderos:</b> ${p.dist_paraderos ? p.dist_paraderos + ' m' : 'N/A'}<br>
-                        <b>ICA:</b> ${p.ica !== null ? p.ica : 'N/A'}<br>
-                        <b>IPT:</b> ${p.ipt !== null ? p.ipt : 'No Aplica'}<br>
+                        <div style="font-family:'Inter'; font-size:12px; line-height:1.5;">
+                        <b style="color:#18181b;">Manzana Catastral</b><br>
+                        <b>Cód:</b> ${p.CODIGO_MANZANA || 'N/D'} | <b>Estrato:</b> ${p.ESTRATO !== undefined ? p.ESTRATO : 'N/A'}<br>
+                        <hr style="margin:6px 0; border:0; border-top:1px solid #e4e4e7;">
+                        <b>Distancia Comercial:</b> ${p.dist_tiendas ? p.dist_tiendas + ' m' : 'N/D'}<br>
+                        <b>Distancia Transporte:</b> ${p.dist_paraderos ? p.dist_paraderos + ' m' : 'N/D'}<br>
+                        <hr style="margin:6px 0; border:0; border-top:1px solid #e4e4e7;">
+                        <b style="color:#047857;">Métrica ICA:</b> ${p.ica !== null ? p.ica : 'N/A'}<br>
+                        <b style="color:#991b1b;">Métrica IPT:</b> ${p.ipt !== null ? p.ipt : 'No Aplica'}<br>
+                        </div>
                     `);
                 }
             });
@@ -245,74 +295,63 @@
             manzanasGroup.addLayer(geojsonManzanasLayer);
         }
 
-        // Actualizar leyenda dinámicamente según el modo seleccionado
-        function actualizarLeyenda() {
+        // --- GESTIÓN DE LEYENDAS Y PANELES DINÁMICOS ---
+        function actualizarInterfaz() {
             var modo = document.getElementById('modo-capa').value;
-            var html = "";
+            var htmlLeyenda = "";
             var iptContainer = document.getElementById('filtro-ipt-container');
+            var icaContainer = document.getElementById('filtro-ica-container');
 
-            if (modo === 'estrato') {
-                iptContainer.style.display = 'none';
-                html = `<b>Estrato Socioeconómico:</b>
-                        <div class="legend" style="line-height: 20px; margin-top: 6px;">
-                            <i style="background: #2b83ba;"></i> Estrato 1<br>
-                            <i style="background: #abdda4;"></i> Estrato 2<br>
-                            <i style="background: #fdae61;"></i> Estrato 3<br>
-                            <i style="background: #cbd5e1;"></i> Estrato 0 / No Aplica<br>
-                        </div>`;
+            // Ocultar/Mostrar filtros según métrica
+            iptContainer.style.display = (modo === 'ipt') ? 'block' : 'none';
+            icaContainer.style.display = (modo === 'ica') ? 'block' : 'none';
+
+            if (modo === 'ipt') {
+                htmlLeyenda = `
+                    <b>Índice Prioridad Territorial (Calculado):</b>
+                    <div class="legend" style="line-height: 22px; margin-top: 8px;">
+                        <i style="background: #991b1b;"></i> Alta Prioridad<br>
+                        <i style="background: #dc2626;"></i> Media-Alta<br>
+                        <i style="background: #f87171;"></i> Baja Prioridad<br>
+                        <i style="background: #fecaca;"></i> Mínima Prioridad<br>
+                        <i style="background: #e4e4e7;"></i> Estrato 0 (No Aplica)<br>
+                    </div>`;
+            } else if (modo === 'ica') {
+                htmlLeyenda = `
+                    <b>Condiciones de Acceso - ICA (Calculado):</b>
+                    <div class="legend" style="line-height: 22px; margin-top: 8px;">
+                        <i style="background: #047857;"></i> Acceso Óptimo<br>
+                        <i style="background: #34d399;"></i> Acceso Medio-Alto<br>
+                        <i style="background: #a7f3d0;"></i> Acceso Medio-Bajo<br>
+                        <i style="background: #fef08a;"></i> Acceso Deficiente<br>
+                        <i style="background: #e4e4e7;"></i> Sin Cálculo<br>
+                    </div>`;
             } else {
-                iptContainer.style.display = 'block';
-                html = `<b>Índice de Prioridad (IPT):</b>
-                        <div class="legend" style="line-height: 20px; margin-top: 6px;">
-                            <i style="background: #7f0000;"></i> Alta Prioridad<br>
-                            <i style="background: #d73027;"></i> Media-Alta<br>
-                            <i style="background: #fc8d59;"></i> Baja Prioridad<br>
-                            <i style="background: #fee08b;"></i> Mínima Prioridad<br>
-                            <i style="background: #cbd5e1;"></i> No Aplica (Estrato 0)<br>
-                        </div>`;
+                htmlLeyenda = `
+                    <b>Estrato Socioeconómico (Observado):</b>
+                    <div class="legend" style="line-height: 22px; margin-top: 8px;">
+                        <i style="background: #60a5fa;"></i> Estrato 1<br>
+                        <i style="background: #818cf8;"></i> Estrato 2<br>
+                        <i style="background: #c084fc;"></i> Estrato 3<br>
+                        <i style="background: #e4e4e7;"></i> Estrato 0 / Otros<br>
+                    </div>`;
             }
-            document.getElementById('leyenda-contenido').innerHTML = html;
+            document.getElementById('leyenda-contenido').innerHTML = htmlLeyenda;
+            
+            if (rawManzanasData) dibujarManzanas(rawManzanasData);
         }
 
-        // Eventos
-        document.getElementById('modo-capa').addEventListener('change', function() {
-            actualizarLeyenda();
-            if (rawManzanasData) dibujarManzanas(rawManzanasData);
-        });
-        document.getElementById('filtro-ipt').addEventListener('change', function() {
-            if (rawManzanasData) dibujarManzanas(rawManzanasData);
-        });
-        document.getElementById('filtro-tiendas').addEventListener('change', function() {
-            if (rawManzanasData) dibujarManzanas(rawManzanasData);
-        });
+        // Listeners
+        document.getElementById('modo-capa').addEventListener('change', actualizarInterfaz);
+        document.getElementById('filtro-ipt').addEventListener('change', function() { if (rawManzanasData) dibujarManzanas(rawManzanasData); });
+        document.getElementById('filtro-ica').addEventListener('change', function() { if (rawManzanasData) dibujarManzanas(rawManzanasData); });
+        document.getElementById('filtro-tiendas').addEventListener('change', function() { if (rawManzanasData) dibujarManzanas(rawManzanasData); });
 
         document.getElementById('btn-reset').addEventListener('click', function() {
             document.getElementById('modo-capa').value = 'ipt';
             document.getElementById('filtro-ipt').value = 'todos';
+            document.getElementById('filtro-ica').value = 'todos';
             document.getElementById('filtro-tiendas').value = 'todos';
             document.getElementById('chk-manzanas').checked = true;
             document.getElementById('chk-tiendas').checked = true;
             document.getElementById('chk-paraderos').checked = true;
-            actualizarLeyenda();
-            if (!map.hasLayer(manzanasGroup)) map.addLayer(manzanasGroup);
-            if (!map.hasLayer(tiendasLayer)) map.addLayer(tiendasLayer);
-            if (!map.hasLayer(paraderosLayer)) map.addLayer(paraderosLayer);
-            if (rawManzanasData) dibujarManzanas(rawManzanasData);
-        });
-
-        // Visibilidad de capas
-        document.getElementById('chk-manzanas').addEventListener('change', function(e) {
-            if (e.target.checked) map.addLayer(manzanasGroup);
-            else map.removeLayer(manzanasGroup);
-        });
-        document.getElementById('chk-tiendas').addEventListener('change', function(e) {
-            if (e.target.checked) map.addLayer(tiendasLayer);
-            else map.removeLayer(tiendasLayer);
-        });
-        document.getElementById('chk-paraderos').addEventListener('change', function(e) {
-            if (e.target.checked) map.addLayer(paraderosLayer);
-            else map.removeLayer(paraderosLayer);
-        });
-    </script>
-</body>
-</html>
