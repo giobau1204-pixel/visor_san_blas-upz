@@ -2,53 +2,92 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Geovisor - Acceso a Alimentos UPZ San Blas</title>
+    <title>Geovisor Analítico - UPZ 32 San Blas</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        body, html { margin: 0; padding: 0; height: 100%; font-family: Arial, sans-serif; }
-        #map { width: 100%; height: 100vh; }
+        body, html { margin: 0; padding: 0; height: 100%; font-family: Arial, sans-serif; overflow: hidden; }
+        #map { width: 100%; height: 100vh; position: absolute; z-index: 1; }
+        
+        /* Panel de Control Lateral (Estilo QGIS) */
+        .control-panel {
+            position: absolute; top: 10px; left: 10px; z-index: 1000;
+            background: white; padding: 15px; border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.3); width: 280px; max-height: 90vh; overflow-y: auto;
+        }
+        .control-panel h2 { font-size: 15px; margin-top: 0; color: #990000; text-align: center; }
+        .control-section { margin-bottom: 12px; border-bottom: 1px solid #eee; padding-bottom: 8px; }
+        .control-section label { font-size: 12px; font-weight: bold; display: block; margin-bottom: 4px; color: #333; }
+        .control-section select, .control-section button { width: 100%; padding: 6px; font-size: 11px; margin-top: 4px; border-radius: 4px; border: 1px solid #ccc; }
+        .control-section button { background: #990000; color: white; font-weight: bold; cursor: pointer; }
+        .control-section button:hover { background: #67000d; }
+
+        /* Leyenda Flotante Derecha */
         .info-panel {
             position: absolute; top: 10px; right: 10px; z-index: 1000;
-            background: white; padding: 15px; border-radius: 8px;
-            box-shadow: 0 0 15px rgba(0,0,0,0.2); max-width: 320px;
+            background: white; padding: 12px; border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.2); width: 220px; font-size: 11px;
         }
-        .info-panel h2 { font-size: 16px; margin-top: 0; color: #990000; }
-        .legend i { width: 18px; height: 18px; float: left; margin-right: 8px; opacity: 0.9; }
-        .legend-point {
-            width: 12px; height: 12px; display: inline-block; border-radius: 50%;
-            margin-right: 8px; vertical-align: middle; border: 1px solid #fff;
-        }
-        .section-title { font-size: 12px; font-weight: bold; margin-top: 10px; color: #333; border-top: 1px solid #ddd; padding-top: 5px; }
+        .info-panel h3 { font-size: 13px; margin: 0 0 5px 0; color: #990000; }
+        .legend i { width: 14px; height: 14px; float: left; margin-right: 6px; opacity: 0.9; }
+        .legend-point { width: 10px; height: 10px; display: inline-block; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
     </style>
 </head>
 <body>
 
     <div id="map"></div>
 
-    <div class="info-panel">
-        <h2>UPZ 32 San Blas</h2>
-        <p style="margin: 5px 0;"><b>Análisis Multicriterio (IPT)</b></p>
+    <!-- Panel Lateral de Control y Filtros (Estilo QGIS) -->
+    <div class="control-panel">
+        <h2>Panel de Control QGIS</h2>
         
-        <div class="section-title">Manzanas Catastrales (IPT)</div>
-        <div class="legend" style="font-size: 12px; line-height: 20px;">
-            <i style="background: #67000d;"></i> Alta Prioridad (IPT Alto)<br>
-            <i style="background: #cb181d;"></i> Prioridad Media-Alta<br>
-            <i style="background: #fb6a4a;"></i> Prioridad Baja<br>
-            <i style="background: #fcbba1;"></i> Prioridad Mínima<br>
-            <i style="background: #d9d9d9;"></i> No Aplica (Estrato 0)<br>
+        <div class="control-section">
+            <label>Visibilidad de Capas:</label>
+            <div><input type="checkbox" id="chk-manzanas" checked> Manzanas (IPT)</div>
+            <div><input type="checkbox" id="chk-tiendas" checked> Tiendas de Alimentos</div>
+            <div><input type="checkbox" id="chk-paraderos" checked> Paraderos SITP</div>
         </div>
 
-        <div class="section-title">Infraestructura y Servicios</div>
-        <div style="font-size: 12px; line-height: 22px;">
+        <div class="control-section">
+            <label>Filtrar Manzanas por Prioridad (IPT):</label>
+            <select id="filtro-ipt">
+                <option value="todos">Mostrar Todas</option>
+                <option value="alto">Alta Prioridad (IPT Alto)</option>
+                <option value="medio">Prioridad Media-Alta</option>
+                <option value="baja">Prioridad Baja / Mínima</option>
+            </select>
+        </div>
+
+        <div class="control-section">
+            <label>Filtrar por Distancia a Tiendas:</label>
+            <select id="filtro-tiendas">
+                <option value="todos">Cualquier Distancia</option>
+                <option value="cerca">Muy Cerca (< 200 m)</option>
+                <option value="lejos">Distancia Mayor (>= 200 m)</option>
+            </select>
+        </div>
+
+        <div class="control-section">
+            <button id="btn-reset">Restablecer Filtros</button>
+        </div>
+    </div>
+
+    <!-- Panel de Referencias (Leyenda) -->
+    <div class="info-panel">
+        <h3>Convenciones</h3>
+        <b>IPT (Manzanas):</b>
+        <div class="legend" style="line-height: 18px; margin-top: 4px;">
+            <i style="background: #67000d;"></i> Alta Prioridad<br>
+            <i style="background: #cb181d;"></i> Media-Alta<br>
+            <i style="background: #fb6a4a;"></i> Baja Prioridad<br>
+            <i style="background: #fcbba1;"></i> Mínima Prioridad<br>
+            <i style="background: #d9d9d9;"></i> No Aplica (Estrato 0)<br>
+        </div>
+        <div style="margin-top: 8px; border-top: 1px solid #eee; padding-top: 5px;">
             <span class="legend-point" style="background: #22c55e;"></span> Tiendas de Alimentos<br>
             <span class="legend-point" style="background: #3b82f6;"></span> Paraderos SITP
         </div>
-
-        <p style="font-size: 11px; color: #666; margin-top: 10px; border-top: 1px solid #ddd; padding-top: 5px;">
-            Haga clic sobre cualquier elemento para consultar sus métricas.
-        </p>
     </div>
 
     <!-- Leaflet JS -->
@@ -56,16 +95,24 @@
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 
     <script>
-        // Inicializar el mapa centrado en San Blas
-        var map = L.map('map').setView([4.575, -74.075], 14);
+        // Inicializar mapa centrado en San Blas
+        var map = L.map('map', { zoomControl: false }).setView([4.575, -74.075], 14);
+        L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-        // Mapa Base de Esri
-        var baseLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
-            attribution: 'Tiles &copy; Esri',
+        // Mapa Base Limpio en Tonos Grises (CartoDB Positron - Sin Esri)
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            subdomains: 'abcd',
             maxZoom: 19
         }).addTo(map);
 
-        // Escala de Rojos para el IPT
+        // Variables globales para datos y capas
+        var geojsonManzanasLayer = null;
+        var tiendasLayer = L.layerGroup().addTo(map);
+        var paraderosLayer = L.layerGroup().addTo(map);
+        var manzanasGroup = L.layerGroup().addTo(map);
+
+        // Escala de Rojos para IPT
         function getColor(ipt) {
             return ipt > 0.35 ? '#67000d' :
                    ipt > 0.31 ? '#cb181d' :
@@ -73,32 +120,83 @@
                    ipt > 0.00 ? '#fcbba1' : '#d9d9d9';
         }
 
-        function style(feature) {
+        function styleFeature(feature) {
             return {
                 fillColor: getColor(feature.properties.ipt),
                 weight: 1,
                 opacity: 1,
                 color: 'white',
-                fillOpacity: 0.7
+                fillOpacity: 0.75
             };
         }
 
-        // Definir los grupos de capas
-        var manzanasLayer = L.layerGroup();
-        var tiendasLayer = L.layerGroup();
-        var paraderosLayer = L.layerGroup();
+        // Cargar datos GeoJSON globales
+        var rawManzanasData = null;
 
-        // 1. Cargar Manzanas (Polígonos al fondo)
         $.getJSON("datos_san_blas.geojson", function (data) {
-            var geojson = L.geoJson(data, {
-                style: style,
+            rawManzanasData = data;
+            dibujarManzanas(data);
+            map.fitBounds(L.geoJson(data).getBounds());
+        });
+
+        $.getJSON("tiendas_sanblas.geojson", function (data) {
+            L.geoJson(data, {
+                pointToLayer: function (feature, latlng) {
+                    return L.circleMarker(latlng, {
+                        radius: 5, fillColor: "#22c55e", color: "#fff", weight: 1, fillOpacity: 1
+                    });
+                },
+                onEachFeature: function (feature, layer) {
+                    var p = feature.properties;
+                    layer.bindPopup(`<b>Comercio de Alimentos</b><br>Nombre: ${p.name || p.NOMBRE || 'N/A'}`);
+                }
+            }).addTo(tiendasLayer);
+        });
+
+        $.getJSON("paraderos.geojson", function (data) {
+            L.geoJson(data, {
+                pointToLayer: function (feature, latlng) {
+                    return L.circleMarker(latlng, {
+                        radius: 4, fillColor: "#3b82f6", color: "#fff", weight: 1, fillOpacity: 1
+                    });
+                },
+                onEachFeature: function (feature, layer) {
+                    var p = feature.properties;
+                    layer.bindPopup(`<b>Paradero SITP</b><br>ID: ${p.name || p.NOMBRE || 'N/A'}`);
+                }
+            }).addTo(paraderosLayer);
+        });
+
+        // Función para renderizar manzanas con filtros aplicados
+        function dibujarManzanas(data) {
+            manzanasGroup.clearLayers();
+            
+            var filtroIptVal = document.getElementById('filtro-ipt').value;
+            var filtroTiendasVal = document.getElementById('filtro-tiendas').value;
+
+            geojsonManzanasLayer = L.geoJson(data, {
+                filter: function(feature) {
+                    var p = feature.properties;
+                    
+                    // Filtro IPT
+                    if (filtroIptVal === 'alto' && !(p.ipt > 0.35)) return false;
+                    if (filtroIptVal === 'medio' && !(p.ipt > 0.31 && p.ipt <= 0.35)) return false;
+                    if (filtroIptVal === 'baja' && !(p.ipt <= 0.31 && p.ipt > 0.00)) return false;
+
+                    // Filtro Distancia Tiendas (ejemplo a 200 metros)
+                    if (filtroTiendasVal === 'cerca' && !(p.dist_tiendas && p.dist_tiendas < 200)) return false;
+                    if (filtroTiendasVal === 'lejos' && !(p.dist_tiendas && p.dist_tiendas >= 200)) return false;
+
+                    return true;
+                },
+                style: styleFeature,
                 onEachFeature: function (feature, layer) {
                     var p = feature.properties;
                     layer.bindPopup(`
                         <b>Manzana Catastral</b><br>
                         <b>Código:</b> ${p.CODIGO_MANZANA || 'N/A'}<br>
                         <b>Estrato:</b> ${p.ESTRATO !== undefined ? p.ESTRATO : 'N/A'}<br>
-                        <hr style="margin:5px 0;">
+                        <hr style="margin:4px 0;">
                         <b>Dist. Tiendas:</b> ${p.dist_tiendas ? p.dist_tiendas + ' m' : 'N/A'}<br>
                         <b>Dist. Paraderos:</b> ${p.dist_paraderos ? p.dist_paraderos + ' m' : 'N/A'}<br>
                         <b>ICA:</b> ${p.ica !== null ? p.ica : 'N/A'}<br>
@@ -106,56 +204,43 @@
                     `);
                 }
             });
-            manzanasLayer.addLayer(geojson);
-            manzanasLayer.addTo(map);
-            map.fitBounds(geojson.getBounds());
+
+            manzanasGroup.addLayer(geojsonManzanasLayer);
+        }
+
+        // Eventos de los filtros del Panel Lateral
+        document.getElementById('filtro-ipt').addEventListener('change', function() {
+            if (rawManzanasData) dibujarManzanas(rawManzanasData);
+        });
+        document.getElementById('filtro-tiendas').addEventListener('change', function() {
+            if (rawManzanasData) dibujarManzanas(rawManzanasData);
         });
 
-        // 2. Cargar Tiendas (Puntos arriba)
-        $.getJSON("tiendas_sanblas.geojson", function (data) {
-            var tiendasGeo = L.geoJson(data, {
-                pointToLayer: function (feature, latlng) {
-                    return L.circleMarker(latlng, {
-                        radius: 6, fillColor: "#22c55e", color: "#fff", weight: 1.5, fillOpacity: 1
-                    });
-                },
-                onEachFeature: function (feature, layer) {
-                    var p = feature.properties;
-                    var name = p.name || p.NOMBRE || p.fna || 'Comercio de Alimentos';
-                    layer.bindPopup(`<b>Comercio de Alimentos</b><br><b>Nombre:</b> ${name}`);
-                }
-            });
-            tiendasLayer.addLayer(tiendasGeo);
-            tiendasLayer.addTo(map);
+        document.getElementById('btn-reset').addEventListener('click', function() {
+            document.getElementById('filtro-ipt').value = 'todos';
+            document.getElementById('filtro-tiendas').value = 'todos';
+            document.getElementById('chk-manzanas').checked = true;
+            document.getElementById('chk-tiendas').checked = true;
+            document.getElementById('chk-paraderos').checked = true;
+            if (!map.hasLayer(manzanasGroup)) map.addLayer(manzanasGroup);
+            if (!map.hasLayer(tiendasLayer)) map.addLayer(tiendasLayer);
+            if (!map.hasLayer(paraderosLayer)) map.addLayer(paraderosLayer);
+            if (rawManzanasData) dibujarManzanas(rawManzanasData);
         });
 
-        // 3. Cargar Paraderos SITP (Puntos arriba)
-        $.getJSON("paraderos.geojson", function (data) {
-            var paraderosGeo = L.geoJson(data, {
-                pointToLayer: function (feature, latlng) {
-                    return L.circleMarker(latlng, {
-                        radius: 5, fillColor: "#3b82f6", color: "#fff", weight: 1.5, fillOpacity: 1
-                    });
-                },
-                onEachFeature: function (feature, layer) {
-                    var p = feature.properties;
-                    var name = p.name || p.NOMBRE || p.denominacion || 'Paradero SITP';
-                    layer.bindPopup(`<b>Paradero de Transporte SITP</b><br><b>ID:</b> ${name}`);
-                }
-            });
-            paraderosLayer.addLayer(paraderosGeo);
-            paraderosLayer.addTo(map);
+        // Control de Visibilidad de Capas (Checkboxes)
+        document.getElementById('chk-manzanas').addEventListener('change', function(e) {
+            if (e.target.checked) map.addLayer(manzanasGroup);
+            else map.removeLayer(manzanasGroup);
         });
-
-        // Control de Capas Interactivo (Para activar y desactivar en la esquina superior izquierda)
-        var overlayMaps = {
-            "Manzanas (IPT - Rojos)": manzanasLayer,
-            "Tiendas de Alimentos": tiendasLayer,
-            "Paraderos SITP": paraderosLayer
-        };
-        
-        // Se añade explícitamente el control de capas al mapa para que sea interactivo
-        L.control.layers(null, overlayMaps, { collapsed: false }).addTo(map);
+        document.getElementById('chk-tiendas').addEventListener('change', function(e) {
+            if (e.target.checked) map.addLayer(tiendasLayer);
+            else map.removeLayer(tiendasLayer);
+        });
+        document.getElementById('chk-paraderos').addEventListener('change', function(e) {
+            if (e.target.checked) map.addLayer(paraderosLayer);
+            else map.removeLayer(paraderosLayer);
+        });
     </script>
 </body>
 </html>
